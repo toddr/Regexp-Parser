@@ -150,14 +150,14 @@ sub init {
     my ($S, $cc) = @_;
     $S->error(RPe_EMPTYB, 'P') if ${&Rx} !~ m{ \G (.) }xgcs;
 
-    my $name = $1;
+    my ($neg, $name) = ("", $1);
     if ($name eq '{') {
-      $S->error(RPe_RBRACE, 'P') if ${&Rx} !~ m{ \G ([^\}]*) \} }xgc;
-      $name = $1;
+      $S->error(RPe_RBRACE, 'P') if ${&Rx} !~ m{ \G (\^?) ([^\}]*) \} }xgc;
+      ($neg, $name) = ($1, $2);
     }
 
-    return $S->force_object(anyof_class => $S->force_object(prop => $name, 1)) if $cc;
-    return $S->object(prop => $name, 1);
+    return $S->force_object(anyof_class => $S->force_object(prop => $name, !$neg)) if $cc;
+    return $S->object(prop => $name, !$neg);
   });
 
   # prop (a unicode property)
@@ -165,14 +165,14 @@ sub init {
     my ($S, $cc) = @_;
     $S->error(RPe_EMPTYB, 'p') if ${&Rx} !~ m{ \G (.) }xgcs;
 
-    my $name = $1;
+    my ($neg, $name) = ("", $1);
     if ($name eq '{') {
-      $S->error(RPe_RBRACE, 'p') if ${&Rx} !~ m{ \G ([^\}]*) \} }xgc;
-      $name = $1;
+      $S->error(RPe_RBRACE, 'p') if ${&Rx} !~ m{ \G (\^?) ([^\}]*) \} }xgc;
+      ($neg, $name) = ($1, $2);
     }
 
-    return $S->force_object(anyof_class => $S->force_object(prop => $name, 0)) if $cc;
-    return $S->object(prop => $name, 0);
+    return $S->force_object(anyof_class => $S->force_object(prop => $name, !!$neg)) if $cc;
+    return $S->object(prop => $name, !!$neg);
   });
 
   # nspace (not a space)
@@ -260,84 +260,6 @@ sub init {
     return $S->object(eol => eos => '\z');
   });
 
-  # alpha POSIX class
-  $self->add_handler('POSIX_alpha' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => alpha => $neg, \$how);
-  });
-
-  # alnum POSIX class
-  $self->add_handler('POSIX_alnum' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => alnum => $neg, \$how);
-  });
-
-  # ascii POSIX class
-  $self->add_handler('POSIX_ascii' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => ascii => $neg, \$how);
-  });
-
-  # cntrl POSIX class
-  $self->add_handler('POSIX_cntrl' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => cntrl => $neg, \$how);
-  });
-
-  # digit POSIX class
-  $self->add_handler('POSIX_digit' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => digit => $neg, \$how);
-  });
-
-  # graph POSIX class
-  $self->add_handler('POSIX_graph' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => graph => $neg, \$how);
-  });
-
-  # lower POSIX class
-  $self->add_handler('POSIX_lower' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => lower => $neg, \$how);
-  });
-
-  # print POSIX class
-  $self->add_handler('POSIX_print' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => print => $neg, \$how);
-  });
-
-  # punct POSIX class
-  $self->add_handler('POSIX_punct' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => punct => $neg, \$how);
-  });
-
-  # space POSIX class
-  $self->add_handler('POSIX_space' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => space => $neg, \$how);
-  });
-
-  # upper POSIX class
-  $self->add_handler('POSIX_upper' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => upper => $neg, \$how);
-  });
-
-  # word POSIX class
-  $self->add_handler('POSIX_word' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => word => $neg, \$how);
-  });
-
-  # xdigit POSIX class
-  $self->add_handler('POSIX_xdigit' => sub {
-    my ($S, $neg, $how) = @_;
-    return $S->force_object(anyof_class => xdigit => $neg, \$how);
-  });
-
   $self->add_handler('atom' => sub {
     my ($S) = @_;
     $S->nextchar;
@@ -352,20 +274,20 @@ sub init {
 
   $self->add_handler('*' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< minmod >;
-    return $S->object(star =>);
+    push @{ $S->{next} }, qw< nestedq minmod >;
+    return $S->object(quant => 0, '');
   });
 
   $self->add_handler('+' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< minmod >;
-    return $S->object(plus =>);
+    push @{ $S->{next} }, qw< nestedq minmod >;
+    return $S->object(quant => 1, '');
   });
 
   $self->add_handler('?' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< minmod >;
-    return $S->object(curly => 0, 1);
+    push @{ $S->{next} }, qw< nestedq minmod >;
+    return $S->object(quant => 0, 1);
   });
 
   $self->add_handler('{' => sub {
@@ -373,11 +295,25 @@ sub init {
     if (${&Rx} =~ m{ \G (\d+) (,?) (\d*) \} }xgc) {
       my ($min, $range, $max) = ($1, $2, $3);
       $max = $min unless $range;
-      push @{ $S->{next} }, qw< minmod >;
+      push @{ $S->{next} }, qw< nestedq minmod >;
       $S->error(RPe_BCURLY) if length($max) and $min > $max;
-      return $S->object(curly => $min, $max);
+      return $S->object(quant => $min, $max);
     }
     return $S->object(exact => '{');
+  });
+
+  $self->add_handler('nestedq' => sub {
+    my ($S) = @_;
+    $S->error(RPe_NESTED)
+      if ${&Rx} =~ m{ \G (?: [*+?] | \{ (\d+) (,?) (\d*) \} ) }xgc;
+    return;
+  });
+
+  $self->add_handler('emptyq' => sub {
+    my ($S) = @_;
+    $S->error(RPe_EQUANT)
+      if ${&Rx} =~ m{ \G (?: [*+?] | \{ (\d+) (,?) (\d*) \} ) }xgc;
+    return;
   });
 
   $self->add_handler('minmod' => sub {
@@ -390,7 +326,8 @@ sub init {
   # alternation branch
   $self->add_handler('|' => sub {
     my ($S) = @_;
-    return $S->object(branch =>);
+    push @{ $S->{next} }, qw< emptyq >;
+    return $S->object(or =>);
   });
 
   # opening parenthesis (maybe capturing paren)
@@ -405,7 +342,7 @@ sub init {
       &RxPOS--;
     }
 
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
     &SIZE_ONLY ? ++$S->{maxpar} : ++$S->{nparen};
     push @{ $S->{flags} }, &Rf;
     return $S->object(open => $S->{nparen});
@@ -494,9 +431,12 @@ sub init {
       }
       elsif (${&Rx} =~ m{ \G \[ ([.=:]) (\^?) (.*?) \1 \] }xgcs) {
         my ($how, $neg, $name) = ($1, $2, $3);
-        my $posix = "POSIX_$name";
-        if ($S->can($posix)) { $$ret = $S->$posix($neg, $how) }
-        else { $S->error(RPe_BADPOS, "$how$neg$name$how") }
+        $S->error(RPe_BADPOS, "$how$neg$name$how")
+          if $name !~ m{ \A (?:
+            alpha | alnum | ascii | cntrl | digit | graph |
+            lower | print | punct | space | upper | word | xdigit
+          ) \z }x;
+        $$ret = $S->force_object(anyof_class => $name, $neg, $how);
       }
       elsif (${&Rx} =~ m{ \G (.) }xgcs) {
         $$ret = $S->force_object(anyof_char => $1);
@@ -504,7 +444,7 @@ sub init {
 
       if ($ret == \$lhs) {
         if (${&Rx} =~ m{ \G (?= - ) }xgc) {
-          if ($lhs->visual =~ /^(?:\[[:.=]|\\[dDsSwWpP])/) {
+          if ($lhs->type ne 'anyof_char') {
             $S->warn(RPe_FRANGE, $lhs->visual, "");
             $ret = $lhs;
             last;
@@ -516,7 +456,7 @@ sub init {
         $ret = $lhs;
       }
       elsif ($ret == \$rhs) {
-        if ($rhs->visual =~ /^(?:\[[:.=]|\\[dDsSwWpP])/) {
+        if ($rhs->type ne 'anyof_char') {
           $S->warn(RPe_FRANGE, $lhs->visual, $rhs->visual);
           &RxPOS = $before_range;
           $ret = $lhs;
@@ -610,13 +550,15 @@ sub init {
         push @{ $S->{flags} }, &Rf;
         push @{ $S->{next} }, qw< c) atom >;
       }
+      push @{ $S->{next} }, qw< emptyq >;
+
       &Rf |= $f_on;
       &Rf &= ~$f_off;
       return $S->object($type => $r_on, $r_off);
     }
 
     &RxPOS++;
-    my $l = length($on.$off) + 2;
+    my $l = length($on.$off) + 1;
     $S->error(RPe_NOTREC, $l, substr(${&Rx}, $old));
   });
 
@@ -631,19 +573,19 @@ sub init {
   # not implemented (?$...)
   $self->add_handler('(?$' => sub {
     my ($S) = @_;
-    $S->error(RPe_NOTREC, 1, substr(${&Rx}, &RxPOS - 1));
+    $S->error(RPe_NOTIMP, 1, substr(${&Rx}, &RxPOS - 1));
   });
 
   # not implemented (?@...)
   $self->add_handler('(?@' => sub {
     my ($S) = @_;
-    $S->error(RPe_NOTREC, 1, substr(${&Rx}, &RxPOS - 1));
+    $S->error(RPe_NOTIMP, 1, substr(${&Rx}, &RxPOS - 1));
   });
 
   # look-ahead
   $self->add_handler('(?=' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
     push @{ $S->{flags} }, &Rf;
     return $S->object(ifmatch => 1);
   });
@@ -651,7 +593,7 @@ sub init {
   # look-ahead (neg)
   $self->add_handler('(?!' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
     push @{ $S->{flags} }, &Rf;
     return $S->object(unlessm => 1);
   });
@@ -672,7 +614,7 @@ sub init {
   # look-behind
   $self->add_handler('(?<=' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
     push @{ $S->{flags} }, &Rf;
     return $S->object(ifmatch => -1);
   });
@@ -680,7 +622,7 @@ sub init {
   # look-behind (neg)
   $self->add_handler('(?<!' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
     push @{ $S->{flags} }, &Rf;
     return $S->object(unlessm => -1);
   });
@@ -688,7 +630,7 @@ sub init {
   # suspend
   $self->add_handler('(?>' => sub {
     my ($S) = @_;
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
     push @{ $S->{flags} }, &Rf;
     return $S->object(suspend =>);
   });
@@ -700,7 +642,7 @@ sub init {
     $nest = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest }) } )* ]x;
     if (${&Rx} =~ m{ \G ($nest) \} \) }xgc) {
       push @{ $S->{flags} }, &Rf;
-      return $S->object(eval => '?{', '}', $1);
+      return $S->object(eval => $1);
     }
     $S->error(RPe_NOTBAL);
   });
@@ -725,7 +667,7 @@ sub init {
     $nest = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest }) } )* ]x;
     if (${&Rx} =~ m{ \G ($nest) \} \) }xgc) {
       push @{ $S->{flags} }, &Rf;
-      return $S->object(logical => '??{', '}', $1);
+      return $S->object(logical => $1);
     }
     $S->error(RPe_NOTBAL);
   });
@@ -771,7 +713,7 @@ sub init {
     my ($S) = @_;
     my $c = 'ifthen(';
 
-    push @{ $S->{next} }, qw< c) atom >;
+    push @{ $S->{next} }, qw< c) atom emptyq >;
 
     if (${&Rx} =~ m{ \G (.) }xgcs) {
       my $n = "$c$1";
@@ -806,7 +748,7 @@ sub init {
     my ($S) = @_;
     return if ${&Rx} !~ m{ \G \| }xgc;
     push @{ $S->{next} }, qw< ifthen_atom >;
-    return $S->object(branch =>);
+    return $S->object(or =>);
   });
 
   # illegal 2nd alternation branch inside ifthen
@@ -924,6 +866,7 @@ Here is example code from the handler for C<(?ismx)> and C<(?ismx:...)>:
     push @{ $S->{flags} }, &Rf;
     push @{ $S->{next} }, qw< c) atom >;
   }
+  push @{ $S->{next} }, qw< emptyq >;
 
   for (split //, $on) {
     if (my $h = $S->can("FLAG_$_")) {
@@ -951,6 +894,15 @@ you do, remember to follow this model correctly.
 =item next
 
 An array reference of what handles (or "rules") to try to match next.
+
+=item modules
+
+An array reference of the extensions to F<Regexp::Parser> that this
+parser is using.
+
+=item prefix
+
+A string representing this module and its extensions.
 
 =back
 
@@ -1009,6 +961,17 @@ match succeeded.
 
 =over 4
 
+=item my $parser = Regexp::Parser->new(CLASS)
+
+=item my $parser = CLASS->new()
+
+Creates a new parser of class I<CLASS>.
+
+=item my $parser = CLASS->new(CLASS2, ...)
+
+Creates a new parser of class I<CLASS> with I<CLASS2> (etc.) as
+additional extensions.
+
 =item my $obj = $parser->object(TYPE => ARGS...)
 
 This creates a node of package C<TYPE> and sends the constructor whatever
@@ -1024,12 +987,13 @@ to call it in your own module.
 
   package Regexp::AndBranch;
   use base 'Regexp::Parser';
+  use Regexp::Parser::Hierarchy;
 
   sub init {
     my $self = shift;
 
     # installs Regexp::Parser's handlers
-    $self->SUPER::init();
+    $self->NEXT::init();
 
     # now add your own...
     $self->add_handler('&' => ...);  # see below
@@ -1068,7 +1032,7 @@ the code reference in $code.  Example:
   # continuing from above...
   sub init {
     my $self = shift;
-    $self->SUPER::init();
+    $self->NEXT::init();
 
     $self->add_handler('&' => sub {
       # $S will be the Regexp::AndBranch object, $self
@@ -1129,9 +1093,6 @@ itself.  The handler throws an error if it can't match the ')', because
 if the 'c)' handler gets called, it's expected to match!  It pops the
 flag stack, and returns an object.
 
-Finally, if you want to add a new POSIX character class, its handler
-must start with "POSIX_".
-
 =item $parser->del_handler(@handle_names)
 
 This uninstalls the given handles.  You send the names (like '|' or
@@ -1140,10 +1101,11 @@ the C<(?{ ... })> and C<(??{ ... })> assertions:
 
   package Regexp::NoCode;
   use base 'Regexp::Parser';
+  use Regexp::Parser::Hierarchy;
 
   sub init {
     my $self = shift;
-    $self->SUPER::init();
+    $self->NEXT::init();
     $self->del_handler(qw<
       (?{   (??{   (?p{
     >);
@@ -1194,10 +1156,10 @@ tree.  However, having them returned while I<walking> the tree is
 helpful.
 
 The walk() method is used to modify the walking stack before the node
-is returned.  Here is the walk() method for all the quantifier and
+is returned.  Here is the walk() method for all the 'quant' and
 'minmod' nodes:
 
-  # star, plus, curly, minmod
+  # quant & minmod
   sub walk {
     my ($self, $walk_stack, $depth) = @_;
     unshift(@$walk_stack,
@@ -1231,15 +1193,23 @@ We have added a handler for the '&' metacharacter, but now we need to
 write the supporting class for the F<Regexp::AndBranch::and> object it
 creates!
 
-A method call for a F<Regexp::MyRx::THING> object will look in its own
-package first, then in F<Regexp::MyRx::__object__> (if it exists), then
-in F<Regexp::Parser::THING> (if it exists), and finally in
-F<Regexp::Parser::__object__>.
+The inheritence tree is created by using the
+F<Regexp::Parser::Hierarchy> module.  Since we are adding an object to
+the hierarchy, we need to tell it what it inherits from.  The beginning
+of our F<Regexp::AndBranch> package needs to change slightly:
 
-Here is the definition of F<Regexp::AndBranch::and>:
+  package Regexp::AndBranch;
+  use base 'Regexp::Parser';
+  use Regexp::Parser::Hierarchy (
+    branch => [qw( and )],
+  );
+
+That means that I<and> inherits from I<branch>.
+
+Here is the definition of F<Regexp::AndBranch::and>.  There is no need
+to work with its @ISA; that is taken care of already.
 
   package Regexp::AndBranch::and;
-  @ISA = qw( Regexp::Parser::branch );
 
   sub new {
     my ($class, $rx) = @_;
@@ -1313,10 +1283,11 @@ handle both '&' and '!'.  '!' will indicate a negative look-ahead.
 
   package Regexp::AndBranch;
   use base 'Regexp::Parser';
+  use Regexp::Parser::Hierarchy;
 
   sub init {
     my $self = shift;
-    $self->SUPER::init();
+    $self->NEXT::init();
 
     # X&Y = match Y if match X at the same place
     $self->add_handler('&' => sub {
@@ -1338,7 +1309,6 @@ argument is a true or false value determining whether this is a positive
 assertion.  Here's the new class for the object:
 
   package Regexp::AndBranch::and;
-  @ISA = qw( Regexp::Parser::branch );
 
   sub new {
     my ($class, $rx, $pos) = @_;
@@ -1488,7 +1458,8 @@ Throws a fatal error.
 
 =head1 SEE ALSO
 
-L<Regexp::Parser>, L<Regexp::Parser::Objects>.
+L<Regexp::Parser>, L<Regexp::Parser::Objects>,
+L<Regexp::Parser::Hierarchy>.
 
 =head1 AUTHOR
 

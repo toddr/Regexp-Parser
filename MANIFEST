@@ -9,9 +9,12 @@ t/04cond.t
 t/05opens.t
 t/06cclass.t
 t/07flags.t
+t/08quantattr.t
+t/09diag.t
 t/99misc.t
 lib/Regexp/Parser.pm
 lib/Regexp/Parser/Diagnostics.pm
 lib/Regexp/Parser/Handlers.pm
+lib/Regexp/Parser/Hierarchy.pm
 lib/Regexp/Parser/Objects.pm
 META.yml                                 Module meta-data (added by MakeMaker)

@@ -62,69 +62,69 @@ for my $rx (@not_bad) { ok( $r->regex($rx) ) }
 __DATA__
 0	assertion	ifthen	(?(?=a|b)c|d)
 1	assertion	ifmatch	(?=a|b)
-2	branch	branch	a|b
+2	branch	or	a|b
 3	exact	exact	a
-2	branch	branch	
+2	branch	or	
 3	exact	exact	b
 1	close	tail	
-1	branch	branch	c|d
+1	branch	or	c|d
 2	exact	exact	c
-1	branch	branch	
+1	branch	or	
 2	exact	exact	d
 0	close	tail	
 DONE
 0	assertion	ifthen	(?(?<=a|b)c|d)
 1	assertion	ifmatch	(?<=a|b)
-2	branch	branch	a|b
+2	branch	or	a|b
 3	exact	exact	a
-2	branch	branch	
+2	branch	or	
 3	exact	exact	b
 1	close	tail	
-1	branch	branch	c|d
+1	branch	or	c|d
 2	exact	exact	c
-1	branch	branch	
+1	branch	or	
 2	exact	exact	d
 0	close	tail	
 DONE
 0	assertion	ifthen	(?(?!a|b)c|d)
 1	assertion	unlessm	(?!a|b)
-2	branch	branch	a|b
+2	branch	or	a|b
 3	exact	exact	a
-2	branch	branch	
+2	branch	or	
 3	exact	exact	b
 1	close	tail	
-1	branch	branch	c|d
+1	branch	or	c|d
 2	exact	exact	c
-1	branch	branch	
+1	branch	or	
 2	exact	exact	d
 0	close	tail	
 DONE
 0	assertion	ifthen	(?(?<!a|b)c|d)
 1	assertion	unlessm	(?<!a|b)
-2	branch	branch	a|b
+2	branch	or	a|b
 3	exact	exact	a
-2	branch	branch	
+2	branch	or	
 3	exact	exact	b
 1	close	tail	
-1	branch	branch	c|d
+1	branch	or	c|d
 2	exact	exact	c
-1	branch	branch	
+1	branch	or	
 2	exact	exact	d
 0	close	tail	
 DONE
 0	assertion	ifthen	(?(?{1})c|d)
 1	assertion	eval	(?{1})
-1	branch	branch	c|d
+1	branch	or	c|d
 2	exact	exact	c
-1	branch	branch	
+1	branch	or	
 2	exact	exact	d
 0	close	tail	
 DONE
 0	assertion	ifthen	(?(1)c|d)
 1	groupp	groupp1	(1)
-1	branch	branch	c|d
+1	branch	or	c|d
 2	exact	exact	c
-1	branch	branch	
+1	branch	or	
 2	exact	exact	d
 0	close	tail	
 DONE

@@ -1,6 +1,6 @@
 package Regexp::Parser;
 
-$VERSION = '0.021';
+$VERSION = '0.10';
 
 use 5.006;
 use Carp qw( carp croak );
@@ -9,6 +9,7 @@ use warnings;
 use charnames ();
 
 our %loaded;
+our %locale;
 
 sub Rx :lvalue		{ $_[0]{regex} }
 sub RxPOS :lvalue	{ pos ${&Rx} }
@@ -23,12 +24,28 @@ sub LATEST :lvalue	{ $_[0]{tree}[-1] }
 use Regexp::Parser::Diagnostics;
 use Regexp::Parser::Objects;
 use Regexp::Parser::Handlers;
+use Regexp::Parser::Hierarchy;
+
 
 sub new {
-  my ($class, $rx) = @_;
-  my $self = bless {}, $class;
+  my $class = shift;
+
+  if (@_ and $class eq __PACKAGE__) {
+    if (@_ == 1) { $class = shift; }
+    else { croak "Regexp::Parser->new(A, B) not permitted" }
+  }
+
+  my $self = bless {
+    modules => [@_, $class],
+    prefix => join(",", @_, $class),
+  }, $class;
+  $self->{prefix} =~ tr/:/_/;
   $self->init;
-  $self->regex($rx) if defined $rx;
+
+  for (@_) {
+    if (my $init = $_->can('init')) { $self->$init() }
+  }
+
   return $self;
 }
 
@@ -36,6 +53,8 @@ sub new {
 sub regex {
   my ($self, $rx) = @_;
   %$self = (
+    modules => $self->{modules},
+    prefix => $self->{prefix},
     regex => \"$rx",
     len => length $rx,
     tree => undef,
@@ -44,20 +63,19 @@ sub regex {
     nparen => 0,
     captures => [],
     flags => [0],
-    next => ['atom'],
+    next => [qw< atom emptyq >],
   );
 
   # do the initial scan (populates maxpar)
   # because tree is undef, nothing gets built
   &RxPOS = 0;
-  eval { $self->parse };
-  $self->{errmsg} = $@, return if $@;
+  return unless $self->parse;
 
   # reset things, define tree as []
   &RxPOS = 0;
   $self->{tree} = [];
   $self->{flags} = [0];
-  $self->{next} = ['atom'];
+  $self->{next} = [qw< atom emptyq >];
 
   return 1;
 }
@@ -67,7 +85,8 @@ sub parse {
   my ($self, $rx) = @_;
   $self->regex($rx) or return if defined $rx;
   croak "no regex defined" unless &RxLEN;
-  1 while $self->next;
+  eval { 1 while $self->next };
+  $self->{errmsg} = $@, return if $@;
   return 1;
 }
 
@@ -97,6 +116,32 @@ sub captures {
 sub nchar {
   my ($self, $N) = @_;
   return chr charnames::vianame($N);
+}
+
+
+sub get_property {
+  my ($self, $prop) = @_;
+  require 'utf8_heavy.pl';
+  return utf8->SWASHNEW($prop, "", 0, 0, 0)->{LIST};
+}
+
+
+sub cache_locale {
+  my ($self, $what) = @_;
+  require POSIX;
+
+  my $loc = POSIX::setlocale(&POSIX::LC_CTYPE);
+
+  unless ($locale{$loc}) {
+    use locale;
+    for (0 .. 255) {
+      $locale{$loc}{d}{+chr} = 1 if chr =~ /\d/;
+      $locale{$loc}{s}{+chr} = 1 if chr =~ /\s/;
+      $locale{$loc}{w}{+chr} = 1 if chr =~ /\w/;
+    }
+  }
+
+  return $locale{$loc}{$what};
 }
 
 
@@ -239,16 +284,25 @@ sub object {
 sub force_object {
   Carp::croak("class name passed where object required") unless ref $_[0];
   my $type = splice @_, 1, 1;
-  my $ref = ref $_[0];
-  my $class = "${ref}::$type";
+  my $self = $_[0];
+  my $class = "$self->{prefix}::$type";
 
-  if ($ref ne __PACKAGE__ and !$loaded{$class}++) {
+  if (!$loaded{$class}++) {
     no strict 'refs';
-    my $orig_base = $Regexp::Parser::{$type . '::'};
-    my $user_base = ${"${ref}::"}{'__object__::'};
+    my $refisa = \@{ ref($self) . "::${type}::ISA" };
+    my $isa = \@{ "${class}::ISA" };
+    my $orig = $Regexp::Parser::{$type . "::"};
+    my $t = $type;
 
-    push @{ "${class}::ISA" }, $ref . "::__object__" if $user_base;
-    push @{ "${class}::ISA" }, __PACKAGE__ . "::$type" if $orig_base;
+    if (!$orig and my ($p) = grep !/::__object__$/, @$refisa) {
+      $p =~ s/.*:://;
+      $orig = $Regexp::Parser::{"${p}::"};
+      $t = $p;
+    }
+
+    @$isa = map "${_}::$type", @{ $self->{modules} };
+    push @$isa, "Regexp::Parser::" . ($orig ? $t : "__object__")
+      if ref($self) ne __PACKAGE__;
   }
 
   return $class->new(@_);
@@ -303,7 +357,7 @@ See examples in L<"USAGE">.
 
 =head1 WARNING
 
-This is version B<0.021>.  The documentation is (still) incomplete.  It
+This is version B<0.10>.  The documentation is (still) incomplete.  It
 may be a little jumbled or hard to understand.  If you find a problem,
 please let L<me|/"AUTHOR"> know.
 
@@ -332,25 +386,18 @@ To use this module as is, load it, and create an instance:
   use Regexp::Parser;
   my $parser = Regexp::Parser->new;
 
+If you want to use a sub-class, read the documentation in
+L<Regexp::Parser::Handlers>.
+
 =head2 Setting a Regex
 
-To have the parser work on a specific regex, you can do use any of the
-following methods:
+To have the parser work on a specific regex, use the regex() method:
 
-=over 4
+  $parser->regex($regex)
 
-=item $parser = Regexp::Parser->new($regex)
-
-You can send the regex to be parsed as the argument to the constructor.
-
-=item $parser->regex($regex)
-
-Clears the parser's memory and sets $regex as the regex to be parsed.
-
-=back
-
-These two approaches do an initial pass over the regex to make sure it
-is well-formed -- any warnings or errors will be determined during this
+This clears the parser's memory and sets $regex as the regex to be
+parsed.  It performs an initial pass over the regex to make sure it is
+well-formed -- any warnings or errors will be determined during this
 initial pass.
 
 =head3 Fatal Errors
@@ -670,9 +717,10 @@ in the future.  Module names are merely the author's suggestions.
 =item Regexp::WordBounds
 
 Adds handlers for C<< < >> and C<< > >> anchors, which match at the
-beginning and end of a "word", respectively.  C<< /</ >> is equivalent to
-C</(?!\w)(?=\w)/>, and C<< />/ >> is equivalent to C</(?<=\w)(?!\w)/>. (So
-that's the object's qr() method for you right there!)
+beginning and end of a "word", respectively.  C<< /</ >> is equivalent
+to C<< /(?<!\w)(?=\w)/ >>, and C<< />/ >> is equivalent to C<<
+/(?<=\w)(?!\w)/ >>. (So that's the object's qr() method for you right
+there!)
 
 =item Regexp::MinLength
 
@@ -733,6 +781,97 @@ There are other possibilities as well.
 =back
 
 =head1 HISTORY
+
+=head2 0.10 -- July 12, 2004
+
+=over 4
+
+=item Prerequisite
+
+Damian Conway's F<NEXT> module is now a prerequisite for this module.
+It is standard in 5.8 (I believe).  It's used to properly re-dispatch
+method calls from the F<__object__> base classes.
+
+=item Hierarchy Changes
+
+Thanks to Mike Lambert, the inheritence system has had a complete
+overhaul so that it actually I<works> now.  See the documentation on
+writing a sub-class in L<Regexp::Parser::Handlers>, as well as the
+notes in L<Regexp::Parser::Hierarchy>.
+
+There are now abstract classes I<anchor>, I<assertion>, and I<branch>.
+You can't call their new() method directly, you can only call it through
+an object that inherits from that class.
+
+There are no longer I<star>, I<plus>, and I<curly> classes; they have
+been combined into one class, I<quant>.  You pass it the min and max,
+and the object's C<type> is determined dynamically.
+
+=item Character Class Hashes
+
+Character classes (I<anyof> objects) now have another attribute,
+C<chars>, which is a hash reference holding characters (eg. 'A') and the
+number of times that character appeared in the character class.  The
+character class C<[A-CB-E]> would have a character map of C<< { A => 1,
+B => 2, C => 2, D => 1, E => 1} >>.  This will reflect ranges and
+embedded classes (such as C<[:cntrl:]> or C<\p{Print}>.
+
+To aid in the "unrolling" of embedded classes, a new method of the
+parser object has been added: get_property().  It takes a POSIX or
+Unicode property name and returns the string defining the characters it
+matches. This string is in the format described in L<perlunicode>.  The
+I<prop> object takes this string and creates a hash reference in the
+object's C<chars> attribute (as does the I<anyof_class> for a POSIX
+class, and the built-in Perl classes C<\w>, C<\D>, etc.). The
+get_property() method relies on F<utf8_heavy.pl>'s utf8::SWASHNEW().
+
+To determine the characters matched by your locale's C<\w>, C<\d>, and
+C<\s>, a new parser method cache_locale() has been added.  This takes
+one of 'w', 'd', or 's', and returns a hash reference of non-Unicode
+characters (values from 0 to 255) that are matched by that Perl class.
+See the documentation for I<anyof> in L<Regexp::Parser::Objects>.
+
+=begin comment
+
+=item Character Class Rendering
+
+The visual() method of I<anyof> objects will quell the repetition of any
+character in the class I<outside> of embedded classes, so the class
+C<[\w\d:4-65:]> will render as C<[\w\d:4-6]>.  If you want to prevent
+characters and ranges from being display if they are included in an
+embedded class, set the I<anyof> object's C<strict> attribute to 1; the
+character class would render as C<[\w\d:]>.  If you want to go even
+further and remove any embedded class that is I<entirely> redundant
+(that is, I<every> character in that embedded class is already found in
+the class), set the C<strict> attribute to 2; the class above would
+render as C<[\w:]>.
+
+=end comment
+
+=item Diagnostics and Bug Fixes
+
+C</^+/> was raising the wrong warning (C<RPe_ZQUANT> instead of
+C<RPe_NULNUL>).
+
+Quantifier errors (C<RPe_EQUANT> and C<RPe_NESTED>) are now raised at
+on the first pass.
+
+There is now a test of the standard diagnostic messages.
+
+I left something out of the unicode property grammar.  There can be a
+caret (C<^>) as the first character inside the braces of a property,
+negating the sense of that property.  However, C<\p{^A}> will render as
+C<\P{A}>, and vice versa.  This may change in future versions, but I see
+no reason (at the present moment) to distinguish between C<\p{^A}> and
+C<\P{A}>.
+
+=back
+
+=item POSIX Classes
+
+You can no longer create your own POSIX character class handlers.  I
+think this is one thing that should I<not> be extended.  Use Unicode
+properties.
 
 =head2 0.021 -- July 3, 2004
 

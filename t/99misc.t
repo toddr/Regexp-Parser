@@ -17,7 +17,6 @@ ok(1); # If we made it this far, we're ok.
 
 my $r = Regexp::Parser->new;
 
-ok( $r->force_object(prop => "alpha", 0)->visual eq '\p{alpha}' );
+ok( $r->force_object(prop => "Lower", 0)->visual eq '\p{Lower}' );
 ok( $r->regex('\N{LATIN SMALL LETTER R}') );
 ok( $r->root->[0]->data, "r" );
-
