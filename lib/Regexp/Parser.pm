@@ -1,6 +1,6 @@
 package Regexp::Parser;
 
-$VERSION = '0.02';
+$VERSION = '0.021';
 
 use 5.006;
 use Carp qw( carp croak );
@@ -303,7 +303,7 @@ See examples in L<"USAGE">.
 
 =head1 WARNING
 
-This is version B<0.02>.  The documentation is (still) incomplete.  It
+This is version B<0.021>.  The documentation is (still) incomplete.  It
 may be a little jumbled or hard to understand.  If you find a problem,
 please let L<me|/"AUTHOR"> know.
 
@@ -670,8 +670,8 @@ in the future.  Module names are merely the author's suggestions.
 =item Regexp::WordBounds
 
 Adds handlers for C<< < >> and C<< > >> anchors, which match at the
-beginning and end of a "word", respectively.  C<</</>> is equivalent to
-C</(?!\w)(?=\w)/>, and C<</>/>> is equivalent to C</(?<=\w)(?!\w)/>. (So
+beginning and end of a "word", respectively.  C<< /</ >> is equivalent to
+C</(?!\w)(?=\w)/>, and C<< />/ >> is equivalent to C</(?<=\w)(?!\w)/>. (So
 that's the object's qr() method for you right there!)
 
 =item Regexp::MinLength
@@ -733,6 +733,40 @@ There are other possibilities as well.
 =back
 
 =head1 HISTORY
+
+=head2 0.021 -- July 3, 2004
+
+=over 4
+
+=item I<anyof_class> Changed
+
+If an I<anyof_class> element is a Unicode property or a Perl class (like
+C<\w> or C<\S>), the object's C<data> field points to the underlying
+object type (I<prop>, I<alnum>, etc.).  If the element is a POSIX class,
+the C<data> field is the string "POSIX".  POSIX classes don't exist in a
+regex outside of a character class, so I'm a little wary of making them
+objects in their own right, even if it would create a better sense of
+uniformity.
+
+=item Documentation
+
+Fixed some poor wording, and documented the problem with using F<SUPER::>
+inside F<MyClass::__object__>.
+
+=item Bug Fixes
+
+Character classes weren't closing properly in the tree.  Fixed.
+
+Standard escapes (C<\a>, C<\e>, etc.) were being returned as I<exact>
+nodes instead of I<anyof_char> nodes when inside character classes.  Fixed.
+(Mike Lambert)
+
+Non-grouping parentheses weren't being parsed properly.  Fixed.  (Mike
+Lambert)
+
+Flags weren't being turned off.  Fixed.
+
+=back
 
 =head2 0.02 -- July 1, 2004
 

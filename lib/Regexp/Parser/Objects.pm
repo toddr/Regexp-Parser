@@ -310,28 +310,21 @@
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
-    my ($class, $rx, $type, $neg, $vis) = @_;
+    my ($class, $rx, $type, $neg, $how) = @_;
     my $self = bless {
       rx => $rx,
       flags => $rx->{flags}[-1],
       family => 'anyof_class',
-      type => $type,
-      data => '',
-      neg => ($neg ? 1 : 0),
-      vis => $vis,
     }, $class;
 
-    # posix send \$how as $vis
-    if (ref $vis) {
-      $self->{how} = $$vis;
-      delete $self->{vis};
-      $self->{data} = 'POSIX';
-    }
-    elsif ($vis =~ /^\\[pP]/) {
-      $self->{data} = 'Unicode';
+    if (ref $type) {
+      $self->{data} = $type;
     }
     else {
-      $self->{data} = 'perl';
+      $self->{type} = $type;
+      $self->{data} = 'POSIX';
+      $self->{neg} = $neg;
+      $self->{how} = $how;
     }
 
     return $self;
@@ -339,8 +332,8 @@
 
   sub type {
     my $self = shift;
-    if (exists $self->{vis}) {
-      join "", ($self->{neg} ? 'n' : ''), $self->{type};
+    if (ref $self->{data}) {
+      $self->{data}->type;
     }
     else {
       join "", $self->{how}, ($self->{neg} ? '^' : ''),
@@ -350,14 +343,20 @@
 
   sub neg {
     my $self = shift;
-    $self->{neg} = shift if @_;
-    $self->{neg};
+    if (ref $self->{data}) {
+      $self->{data}->neg = shift if @_;
+      $self->{data}->neg;
+    }
+    else {
+      $self->{neg} = shift if @_;
+      $self->{neg};
+    }
   }
 
   sub visual {
     my $self = shift;
-    if (exists $self->{vis}) {
-      sprintf $self->{neg} ? uc($self->{vis}) : lc($self->{vis});
+    if (ref $self->{data}) {
+      $self->{data}->visual;
     }
     else {
       join "", "[", $self->{how}, ($self->{neg} ? '^' : ''),
@@ -382,6 +381,14 @@
       omit => 1,
       up => 1,
     }, $class;
+    return $self;
+  }
+
+  sub insert {
+    my $self = shift;
+    my $rx = $self->{rx};
+    $rx->{tree} = pop @{ $rx->{stack} };
+    return $self;
   }
 }
 
@@ -1432,7 +1439,7 @@ character class's ender is an C<anyof_close> node.
 
 The general family of this object.  These are any of: alnum, anchor,
 anyof, anyof_char, anyof_class, anyof_range, assertion, branch, close,
-clump, digit, exact, flags, group, groupp, minmod, open, quant, ref,
+clump, digit, exact, flags, group, groupp, minmod, prop, open, quant, ref,
 reg_any.
 
 =item my $f = $obj->flags()
@@ -1486,11 +1493,30 @@ representation of any children of the object.
 =item $obj->walk()
 
 "Walks" the object.  This is used to dive into the node's children
-when using a walker (see L</"Walking the Tree">).
+when using a walker (see L<Regexp::Parser/"Walking the Tree">).
 
 =back
 
 Objects may override these methods (as objects often do).
+
+=head3 Using F<SUPER::>
+
+You can't use C<< $obj->SUPER::method() >> inside the F<__object__> class,
+because F<__object__> doesn't inherit from anywhere.  You want to go along
+the I<object>'s inheritance tree.  You can use Damian Conway's F<NEXT>
+module, or you can use this (admittedly crufty) workaround:
+
+  package MyModule::__object__;
+
+  sub visual {
+    my $self = shift;
+    my $dispatch = do {
+      no strict 'refs';
+      (grep $_ ne __PACKAGE__, @{ ref($self) . "::ISA" })[0]
+    } . "::visual";
+    # ...
+    $self->$dispatch();
+  }    
 
 =head2 Object Attributes
 
@@ -1700,9 +1726,9 @@ Types: via C<[:NAME:]>, C<[:^NAME:]>, C<\p{NAME}>, C<\P{NAME}>: alnum
 print, punct, space (C<\s>, C<\S>), upper, word, xdigit; others are
 possible (Unicode properties and user-defined POSIX classes)
 
-Data: 'perl' if C<\w>, C<\W>, C<\s>, C<\S>, C<\d>, C<\D>; 'Unicode' if
-C<\p{NAME}>, C<\P{NAME}>; 'POSIX' if C<[:NAME:]>, C<[^:NAME:]> (or
-other POSIX notations, like C<[=NAME=]> and C<[.NAME.]>)
+Data: 'POSIX' if C<[:NAME:]>, C<[^:NAME:]> (or other POSIX notations, like
+C<[=NAME=]> and C<[.NAME.]>); otherwise, reference to I<alnum>, I<digit>,
+I<space>, or I<prop> object
 
 Neg: 1 if negated
 

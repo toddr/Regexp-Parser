@@ -26,12 +26,41 @@ sub init {
     return 0x0;
   });
 
-  $self->add_handler('\a' => sub { $_[0]->object(exact => "\a", '\a') });
-  $self->add_handler('\e' => sub { $_[0]->object(exact => "\e", '\e') });
-  $self->add_handler('\f' => sub { $_[0]->object(exact => "\f", '\f') });
-  $self->add_handler('\n' => sub { $_[0]->object(exact => "\n", '\n') });
-  $self->add_handler('\r' => sub { $_[0]->object(exact => "\r", '\r') });
-  $self->add_handler('\t' => sub { $_[0]->object(exact => "\t", '\t') });
+  $self->add_handler('\a' => sub {
+    my ($S, $cc) = @_;
+    return $S->force_object(anyof_char => "\a", '\a') if $cc;
+    return $S->object(exact => "\a", '\a');
+  });
+
+  $self->add_handler('\e' => sub {
+    my ($S, $cc) = @_;
+    return $S->force_object(anyof_char => "\e", '\e') if $cc;
+    return $S->object(exact => "\e", '\e');
+  });
+
+  $self->add_handler('\f' => sub {
+    my ($S, $cc) = @_;
+    return $S->force_object(anyof_char => "\f", '\f') if $cc;
+    return $S->object(exact => "\f", '\f');
+  });
+
+  $self->add_handler('\n' => sub {
+    my ($S, $cc) = @_;
+    return $S->force_object(anyof_char => "\n", '\n') if $cc;
+    return $S->object(exact => "\n", '\n');
+  });
+
+  $self->add_handler('\r' => sub {
+    my ($S, $cc) = @_;
+    return $S->force_object(anyof_char => "\r", '\r') if $cc;
+    return $S->object(exact => "\r", '\r');
+  });
+
+  $self->add_handler('\t' => sub {
+    my ($S, $cc) = @_;
+    return $S->force_object(anyof_char => "\t", '\t') if $cc;
+    return $S->object(exact => "\t", '\t');
+  });
 
   # bol, mbol, sbol
   $self->add_handler('^' => sub {
@@ -86,14 +115,14 @@ sub init {
   # ndigit (not a digit)
   $self->add_handler('\D' => sub {
     my ($S, $cc) = @_;
-    return $S->force_object(anyof_class => digit => 1, '\d') if $cc;
+    return $S->force_object(anyof_class => $S->force_object(digit => 1)) if $cc;
     return $S->object(digit => 1);
   });
 
   # digit (a digit)
   $self->add_handler('\d' => sub {
     my ($S, $cc) = @_;
-    return $S->force_object(anyof_class => digit => 0, '\d') if $cc;
+    return $S->force_object(anyof_class => $S->force_object(digit => 0)) if $cc;
     return $S->object(digit => 0);
   });
 
@@ -127,7 +156,7 @@ sub init {
       $name = $1;
     }
 
-    return $S->force_object(anyof_class => $name, 1, "\\P{$name}") if $cc;
+    return $S->force_object(anyof_class => $S->force_object(prop => $name, 1)) if $cc;
     return $S->object(prop => $name, 1);
   });
 
@@ -142,35 +171,35 @@ sub init {
       $name = $1;
     }
 
-    return $S->force_object(anyof_class => $name, 0, "\\p{$name}") if $cc;
+    return $S->force_object(anyof_class => $S->force_object(prop => $name, 0)) if $cc;
     return $S->object(prop => $name, 0);
   });
 
   # nspace (not a space)
   $self->add_handler('\S' => sub {
     my ($S, $cc) = @_;
-    return $S->force_object(anyof_class => space => 1, '\s') if $cc;
+    return $S->force_object(anyof_class => $S->force_object(space => 1)) if $cc;
     return $S->object(space => 1);
   });
 
   # space (a space)
   $self->add_handler('\s' => sub {
     my ($S, $cc) = @_;
-    return $S->force_object(anyof_class => space => 0, '\s') if $cc;
+    return $S->force_object(anyof_class => $S->force_object(space => 0)) if $cc;
     return $S->object(space => 0);
   });
 
   # nalnum (not a word character)
   $self->add_handler('\W' => sub {
     my ($S, $cc) = @_;
-    return $S->force_object(anyof_class => alnum => 1, '\w') if $cc;
+    return $S->force_object(anyof_class => $S->force_object(alnum => 1)) if $cc;
     return $S->object(alnum => 1);
   });
 
   # alnum (a word character)
   $self->add_handler('\w' => sub {
     my ($S, $cc) = @_;
-    return $S->force_object(anyof_class => alnum => 0, '\w') if $cc;
+    return $S->force_object(anyof_class => $S->force_object(alnum => 0)) if $cc;
     return $S->object(alnum => 0);
   });
 
@@ -546,50 +575,49 @@ sub init {
     ${&Rx} =~ m{ \G ([a-zA-Z]*) (-? [a-zA-Z]*) }xgc;
     my ($on, $off) = ($1, $2);
     my ($r_on, $r_off) = ("", "");
+    my ($f_on, $f_off) = (0,0);
+
     &RxPOS -= length($on.$off);
+    my $old = &RxPOS;
+
+    for (split //, $on) {
+      &RxPOS++;
+      if (my $f = $S->can("FLAG_$_")) {
+        my $v = $S->$f(1) and $r_on .= $_;
+        $f_on |= $v;
+        next;
+      }
+      my $bad = substr ${&Rx}, $old;
+      $S->error(RPe_NOTREC, &RxPOS - $old, $bad);
+    }
+
+    &RxPOS++ if $off =~ s/^-//;
+
+    for (split //, $off) {
+      &RxPOS++;
+      if (my $f = $S->can("FLAG_$_")) {
+        my $v = $S->$f(0) and $r_off .= $_;
+        $f_off |= $v;
+        next;
+      }
+      my $bad = substr ${&Rx}, $old;
+      $S->error(RPe_NOTREC, &RxPOS - $old, $bad);
+    }
 
     if (${&Rx} =~ m{ \G ([:)]) }xgc) {
       my $type = $1 eq ':' ? 'group' : 'flags';
-      &RxPOS--;
-      my $old = &RxPOS;
-
       if ($type eq 'group') {
         push @{ $S->{flags} }, &Rf;
         push @{ $S->{next} }, qw< c) atom >;
       }
-
-      for (split //, $on) {
-        &RxPOS++;
-        if (my $f = $S->can("FLAG_$_")) {
-          my $v = $S->$f(1) and $r_on .= $_;
-          &Rf |= $v;
-          next;
-        }
-        my $bad = substr ${&Rx}, $old;
-        $S->error(RPe_NOTREC, &RxPOS - $old, $bad);
-      }
-
-      &RxPOS++ if $off =~ s/^-//;
-
-      for (split //, $off) {
-        &RxPOS++;
-        if (my $f = $S->can("FLAG_$_")) {
-          my $v = $S->$f(0) and $r_off .= $_;
-          &Rf |= $v;
-          next;
-        }
-        my $bad = substr ${&Rx}, $old;
-        $S->error(RPe_NOTREC, &RxPOS - $old, $bad);
-      }
-
-      &RxPOS++;
-
+      &Rf |= $f_on;
+      &Rf &= ~$f_off;
       return $S->object($type => $r_on, $r_off);
     }
 
-    my $l = length($on.$off) || 1;
-    &RxPOS += $l;
-    $S->error(RPe_NOTREC, $l, substr(${&Rx}, &RxPOS-$l));
+    &RxPOS++;
+    my $l = length($on.$off) + 2;
+    $S->error(RPe_NOTREC, $l, substr(${&Rx}, $old));
   });
 
   # comment
@@ -826,7 +854,7 @@ F<Regexp::AndBranch>.
 
 =head2 Parser Internals
 
-The parser is object is a hash reference with the following keys:
+The parser object is a hash reference with the following keys:
 
 =over 4
 

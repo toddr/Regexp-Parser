@@ -5,8 +5,8 @@ SYNOPSIS
     See examples in "USAGE".
 
 WARNING
-    This is version 0.02. The documentation is (still) incomplete. It may be
-    a little jumbled or hard to understand. If you find a problem, please
+    This is version 0.021. The documentation is (still) incomplete. It may
+    be a little jumbled or hard to understand. If you find a problem, please
     let me know.
 
     Documentation has been added and moved around. See
@@ -312,9 +312,9 @@ EXTENSIONS
 
     Regexp::WordBounds
         Adds handlers for "<" and ">" anchors, which match at the beginning
-        and end of a "word", respectively. "</</"> is equivalent to
-        "/(?!\w)(?=\w)/", and "</"/>> is equivalent to "/(?<=\w)(?!\w)/".
-        (So that's the object's qr() method for you right there!)
+        and end of a "word", respectively. "/</" is equivalent to
+        "/(?!\w)(?=\w)/", and "/>/" is equivalent to "/(?<=\w)(?!\w)/". (So
+        that's the object's qr() method for you right there!)
 
     Regexp::MinLength
         Implements a min_length() method for all objects that determines the
@@ -367,12 +367,38 @@ EXTENSIONS
         There are other possibilities as well.
 
 HISTORY
+  0.021 -- July 3, 2004
+    *anyof_class* Changed
+        If an *anyof_class* element is a Unicode property or a Perl class
+        (like "\w" or "\S"), the object's "data" field points to the
+        underlying object type (*prop*, *alnum*, etc.). If the element is a
+        POSIX class, the "data" field is the string "POSIX". POSIX classes
+        don't exist in a regex outside of a character class, so I'm a little
+        wary of making them objects in their own right, even if it would
+        create a better sense of uniformity.
+
+    Documentation
+        Fixed some poor wording, and documented the problem with using
+        SUPER:: inside MyClass::__object__.
+
+    Bug Fixes
+        Character classes weren't closing properly in the tree. Fixed.
+
+        Standard escapes ("\a", "\e", etc.) were being returned as *exact*
+        nodes instead of *anyof_char* nodes when inside character classes.
+        Fixed. (Mike Lambert)
+
+        Non-grouping parentheses weren't being parsed properly. Fixed. (Mike
+        Lambert)
+
+        Flags weren't being turned off. Fixed.
+
   0.02 -- July 1, 2004
     Better Abstracting
         The object() method calls force_object(). force_object() creates an
         object no matter what pass the parser is making; object() will
         return immediately if it's just the first pass. This means that
-        force_object() should be used to create stand-alone objects, and
+        force_object() should be used to create stand-alone objects.
 
         Each object now has an insert() method that defines how it gets
         placed into the regex tree. Most objects inherit theirs from the
