@@ -26,7 +26,7 @@ use NEXT;
 
   sub qr {
     my $self = shift;
-    $self->visual;
+    $self->visual(@_);
   }
 
   sub visual {
@@ -83,6 +83,11 @@ use NEXT;
 {
   # \A ^ \B \b \G \Z \z $
   package Regexp::Parser::anchor;
+  push @ISA, qw( Regexp::Parser::__object__ );
+  push @Regexp::Parser::bol::ISA, __PACKAGE__;
+  push @Regexp::Parser::bound::ISA, __PACKAGE__;
+  push @Regexp::Parser::gpos::ISA, __PACKAGE__;
+  push @Regexp::Parser::eol::ISA, __PACKAGE__;
 
   sub new {
     my ($class, $rx, $type, $vis) = @_;
@@ -104,6 +109,7 @@ use NEXT;
 {
   # . \C
   package Regexp::Parser::reg_any;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $type, $vis) = @_;
@@ -122,6 +128,7 @@ use NEXT;
 {
   # \w \W
   package Regexp::Parser::alnum;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $neg) = @_;
@@ -129,14 +136,8 @@ use NEXT;
       rx => $rx,
       flags => $rx->{flags}[-1],
       neg => $neg,
-      chars => $rx->cache_locale('w'),
     }, $class;
     return $self;
-  }
-
-  sub chars {
-    my $self = shift;
-    $self->{chars};
   }
 
   sub neg {
@@ -162,6 +163,7 @@ use NEXT;
 {
   # \s \S
   package Regexp::Parser::space;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $neg) = @_;
@@ -169,14 +171,8 @@ use NEXT;
       rx => $rx,
       flags => $rx->{flags}[-1],
       neg => $neg,
-      chars => $rx->cache_locale('s'),
     }, $class;
     return $self;
-  }
-
-  sub chars {
-    my $self = shift;
-    $self->{chars};
   }
 
   sub neg {
@@ -202,6 +198,7 @@ use NEXT;
 {
   # \d \D
   package Regexp::Parser::digit;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $neg) = @_;
@@ -209,14 +206,8 @@ use NEXT;
       rx => $rx,
       flags => $rx->{flags}[-1],
       neg => $neg,
-      chars => $rx->cache_locale('d'),
     }, $class;
     return $self;
-  }
-
-  sub chars {
-    my $self = shift;
-    $self->{chars};
   }
 
   sub neg {
@@ -241,6 +232,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $neg, @data) = @_;
@@ -252,15 +244,8 @@ use NEXT;
       neg => $neg,
       data => \@data,
       down => 1,
-      strict => 1,
-      chars => {},
     }, $class;
     return $self;
-  }
-
-  sub chars {
-    my $self = shift;
-    $self->{chars};
   }
 
   sub qr {
@@ -321,6 +306,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof_char;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $data, $vis) = @_;
@@ -334,18 +320,12 @@ use NEXT;
       vis => $vis,
     }, $class;
   }
-
-  sub insert {
-    my ($self, $tree) = @_;
-    $self->NEXT::insert($tree);
-    my $cc = $self->{rx}{stack}[-1][-1];  # char class
-    $cc->{chars}{$self->data}++;
-  }
 }
 
 
 {
   package Regexp::Parser::anyof_range;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $lhs, $rhs) = @_;
@@ -367,20 +347,12 @@ use NEXT;
     my $self = shift;
     join "-", $self->{data}[0]->visual, $self->{data}[1]->visual;
   }
-
-  sub insert {
-    my ($self, $tree) = @_;
-    $self->NEXT::insert($tree);
-    my $cc = $self->{rx}{stack}[-1][-1];  # char class
-    my $l = $self->{data}[0]{data};
-    my $u = $self->{data}[1]{data};
-    $cc->{chars}{+chr}++ for ord($l) .. ord($u);
-  }
 }
 
 
 {
   package Regexp::Parser::anyof_class;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $type, $neg, $how) = @_;
@@ -398,29 +370,9 @@ use NEXT;
       $self->{data} = 'POSIX';
       $self->{neg} = $neg;
       $self->{how} = $how;
-      $self->{chars} = {};
-      my $t = ucfirst lc $type;
-      $t = "XDigit" if $t eq "Xdigit";
-      my $set = $self->{rx}->get_property($t);
-      while ($set =~ /^(\S+)\t(\S*)/mg) {
-        if ($2) { $self->{chars}{+chr} = 1 for hex($1) .. hex($2) }
-        else { $self->{chars}{chr hex $1} = 1 }
-      }
     }
 
     return $self;
-  }
-
-  sub chars {
-    my $self = shift;
-    $self->{chars} or $self->data->{chars};
-  }
-
-  sub insert {
-    my ($self, $tree) = @_;
-    $self->NEXT::insert($tree);
-    my $cc = $self->{rx}{stack}[-1][-1];  # char class
-    $cc->{chars}{$_}++ for keys %{ $self->chars };
   }
 
   sub type {
@@ -461,6 +413,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof_close;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx) = @_;
@@ -487,6 +440,7 @@ use NEXT;
 
 {
   package Regexp::Parser::prop;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $type, $neg) = @_;
@@ -497,19 +451,8 @@ use NEXT;
       type => $type,
       data => '',
       neg => ($neg ? 1 : 0),
-      chars => {},
     }, $class;
-    my $set = $self->{rx}->get_property($type);
-    while ($set =~ /^(\S+)\t(\S*)/mg) {
-      if ($2) { $self->{chars}{+chr} = 1 for hex($1) .. hex($2) }
-      else { $self->{chars}{chr hex $1} = 1 }
-    }
     return $self;
-  }
-
-  sub chars {
-    my $self = shift;
-    $self->{chars};
   }
 
   sub type {
@@ -532,6 +475,7 @@ use NEXT;
 
 {
   package Regexp::Parser::clump;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $vis) = @_;
@@ -548,17 +492,17 @@ use NEXT;
 
 {
   package Regexp::Parser::branch;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
-    my ($class, $rx, $type) = @_;
-    Carp::croak("branch is an abstract class") if $class =~ /::branch$/;
-
+    my ($class, $rx) = @_;
     my $self = bless {
       rx => $rx,
       flags => $rx->{flags}[-1],
       data => [[]],
       family => 'branch',
-      type => $type,
+      type => 'branch',
+      raw => '|',
       branch => 1,
     }, $class;
   }
@@ -598,15 +542,6 @@ use NEXT;
       shift @$ws;
     }
   }
-}
-
-
-{
-  package Regexp::Parser::or;
-
-  sub type { 'or' }
-
-  sub raw { '|' }
 
   sub insert {
     my ($self, $tree) = @_;
@@ -650,6 +585,7 @@ use NEXT;
 
 {
   package Regexp::Parser::exact;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $data, $vis) = @_;
@@ -699,6 +635,7 @@ use NEXT;
 
 {
   package Regexp::Parser::quant;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $min, $max, $data) = @_;
@@ -774,6 +711,14 @@ use NEXT;
     my ($self, $tree) = @_;
     my $rx = $self->{rx};
 
+    # quantifiers must follow something
+    $rx->error($rx->RPe_EQUANT)
+      if @$tree == 0 or $tree->[-1]->family eq "flags";
+
+    # quantifiers must NOT follow quantifiers
+    $rx->error($rx->RPe_NESTED)
+      if $tree->[-1]->family eq "quant";
+
     # on /abc+/, we extract the 'c' from the 'exact' node
     if ($tree->[-1]->family eq "exact" and @{ $tree->[-1]->{data} } > 1) {
       my $d = pop @{ $tree->[-1]->{data} };
@@ -789,7 +734,7 @@ use NEXT;
       # zero-width assertion is unexpected
       if (
         ($tree->[-1]->family eq "assertion" and $tree->[-1]->type eq "eval") or
-        ($tree->[-1]->{zerolen} and $self->{max} ne '' and !($self->{min} == 0 and $self->{max} == 1))
+        ($tree->[-1]->{zerolen} and !($self->{min} == 0 and $self->{max} == 1))
       ) {
         $rx->awarn($rx->RPe_ZQUANT);
       }
@@ -810,6 +755,7 @@ use NEXT;
 {
   # ( non-capturing
   package Regexp::Parser::group;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $on, $off, @data) = @_;
@@ -884,6 +830,7 @@ use NEXT;
 {
   # ( capturing
   package Regexp::Parser::open;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $nparen, @data) = @_;
@@ -958,6 +905,7 @@ use NEXT;
 {
   # ) closing
   package Regexp::Parser::close;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $nparen) = @_;
@@ -989,6 +937,7 @@ use NEXT;
 
     do {
       $tree = pop @{ $rx->{stack} }
+        or $rx->error($rx->RPe_RPAREN)
     } until $tree->[-1]->{down};
 
     $rx->{tree} = $tree;
@@ -998,7 +947,7 @@ use NEXT;
 
     if ($tree->[-1]->{ifthen}) {
       my $ifthen = $tree->[-1];
-      my $br = $rx->object(or =>);
+      my $br = $rx->object(branch =>);
       my $cond;
 
       if (ref $ifthen->{data}[0] eq "ARRAY") {
@@ -1027,6 +976,7 @@ use NEXT;
 {
   # ) for non-captures
   package Regexp::Parser::tail;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx) = @_;
@@ -1047,17 +997,16 @@ use NEXT;
     my $rx = $self->{rx};
 
     do {
-      $tree = pop @{ $rx->{stack} }
+      $rx->{tree} = pop @{ $rx->{stack} }
+        or $rx->error($rx->RPe_RPAREN)
     } until $tree->[-1]->{down};
-
-    $rx->{tree} = $tree;
 
     $self->{nparen} = $tree->[-1]->nparen
       if $self->family eq 'close' and $tree->[-1]->can('nparen');
 
     if ($tree->[-1]->{ifthen}) {
       my $ifthen = $tree->[-1];
-      my $br = $rx->object(or =>);
+      my $br = $rx->object(branch =>);
       my $cond;
 
       if (ref $ifthen->{data}[0] eq "ARRAY") {
@@ -1086,6 +1035,7 @@ use NEXT;
 {
   # \1 (backrefs)
   package Regexp::Parser::ref;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $nparen) = @_;
@@ -1117,6 +1067,14 @@ use NEXT;
 
 {
   package Regexp::Parser::assertion;
+  push @ISA, qw( Regexp::Parser::__object__ );
+
+  push @Regexp::Parser::ifmatch::ISA, __PACKAGE__;
+  push @Regexp::Parser::unlessm::ISA, __PACKAGE__;
+  push @Regexp::Parser::suspend::ISA, __PACKAGE__;
+  push @Regexp::Parser::ifthen::ISA, __PACKAGE__;
+  push @Regexp::Parser::eval::ISA, __PACKAGE__;
+  push @Regexp::Parser::logical::ISA, __PACKAGE__;
 
   sub qr {
     my $self = shift;
@@ -1281,6 +1239,7 @@ use NEXT;
 {
   # the N in (?(N)t|f) when N is a number
   package Regexp::Parser::groupp;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $nparen) = @_;
@@ -1390,6 +1349,7 @@ use NEXT;
 
 {
   package Regexp::Parser::flags;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $on, $off) = @_;
@@ -1425,6 +1385,7 @@ use NEXT;
 
 {
   package Regexp::Parser::minmod;
+  push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
     my ($class, $rx, $data) = @_;
@@ -1475,27 +1436,13 @@ This module contains the object definitions for F<Regexp::Parser>.
 
 =head2 Inheritance
 
-All built-in objects inherit from F<Regexp::Parser::__object__>.  There
-are three abstract classes, I<anchor>, I<assertion>, and I<branch> which
-can also be inherited from.  I<anchor> is inherited by I<bol>, I<bound>,
-I<gpos>, and I<eol>.  I<assertion> is inherited by I<ifmatch>,
-I<unlessm>, I<ifthen>, I<suspend>, I<eval>, and I<logical>.  I<branch>
-is inherited by I<or>.
-
-Here is the @ISA tree for the class F<Regexp::Parser::or>:
-
-  Regexp::Parser::or
-    Regexp::Parser::branch
-      Regexp::Parser::__object__
-
-Here is the @ISA tree for the class F<MyRx::or>:
-
-  MyRx::or
-    MyRx::branch
-      MyRx::__object__
-  Regexp::Parser::or
-    Regexp::Parser::branch
-      Regexp::Parser::__object__
+All F<Regexp::Parser::*> objects inherit from
+F<Regexp::Parser::__object__>, the global object base class.  All
+user-defined F<MyRx::*> objects inherit from F<MyRx::__object__> first,
+then from the F<Regexp::Parser::*> object of the same name, and finally
+from F<Regexp::Parser::__object__>.  Don't worry -- if you don't define
+a base class for your module's objects, or the object you create isn't
+a modification of a standard object, no warnings will be issued.
 
 =head2 The F<__object__> Base Class
 
@@ -1613,10 +1560,9 @@ The following attributes may also be set:
 
 Whether this object has branches (like C<|>).
 
-=item chars
+=item family
 
-The characters contained in this class (for I<anyof>, I<alnum>, I<prop>,
-etc.).
+The general family of this object.
 
 =item data
 
@@ -1630,10 +1576,6 @@ less than 0, it is behind; otherwise, it is ahead.
 =item down
 
 Whether this object creates a deeper scope (like an OPEN).
-
-=item family
-
-The general family of this object.
 
 =item ifthen
 
@@ -1799,7 +1741,7 @@ Family: anyof_class
 Types: via C<[:NAME:]>, C<[:^NAME:]>, C<\p{NAME}>, C<\P{NAME}>: alnum
 (C<\w>, C<\W>), alpha, ascii, cntrl, digit (C<\d>, C<\D>), graph, lower,
 print, punct, space (C<\s>, C<\S>), upper, word, xdigit; others are
-possible (Unicode properties)
+possible (Unicode properties and user-defined POSIX classes)
 
 Data: 'POSIX' if C<[:NAME:]>, C<[^:NAME:]> (or other POSIX notations, like
 C<[=NAME=]> and C<[.NAME.]>); otherwise, reference to I<alnum>, I<digit>,
@@ -1830,11 +1772,11 @@ Family: clump
 
 Types: clump (C<\X>)
 
-=head2 or
+=head2 branch
 
 Family: branch
 
-Types: or (C<|>)
+Types: branch (C<|>)
 
 Data: array reference of array references, each representing one
 alternation, holding any number of objects
@@ -1983,8 +1925,7 @@ Data: an object in the I<quant> family
 
 =head1 SEE ALSO
 
-L<Regexp::Parser>, L<Regexp::Parser::Handlers>,
-L<Regexp::Parser::Hierarchy>.
+L<Regexp::Parser>, L<Regexp::Parser::Handlers>.
 
 =head1 AUTHOR
 

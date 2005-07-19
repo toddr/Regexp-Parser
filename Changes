@@ -1,67 +1,7 @@
 HISTORY
-  0.10 -- July 12, 2004
-    Prerequisite
-        Damian Conway's NEXT module is now a prerequisite for this module.
-        It is standard in 5.8 (I believe). It's used to properly re-dispatch
-        method calls from the __object__ base classes.
+  0.20  -- xxx
 
-    Hierarchy Changes
-        Thanks to Mike Lambert, the inheritence system has had a complete
-        overhaul so that it actually *works* now. See the documentation on
-        writing a sub-class in Regexp::Parser::Handlers, as well as the
-        notes in Regexp::Parser::Hierarchy.
-
-        There are now abstract classes *anchor*, *assertion*, and *branch*.
-        You can't call their new() method directly, you can only call it
-        through an object that inherits from that class.
-
-        There are no longer *star*, *plus*, and *curly* classes; they have
-        been combined into one class, *quant*. You pass it the min and max,
-        and the object's "type" is determined dynamically.
-
-    Character Class Hashes
-        Character classes (*anyof* objects) now have another attribute,
-        "chars", which is a hash reference holding characters (eg. 'A') and
-        the number of times that character appeared in the character class.
-        The character class "[A-CB-E]" would have a character map of "{ A =>
-        1, B => 2, C => 2, D => 1, E => 1}". This will reflect ranges and
-        embedded classes (such as "[:cntrl:]" or "\p{Print}".
-
-        To aid in the "unrolling" of embedded classes, a new method of the
-        parser object has been added: get_property(). It takes a POSIX or
-        Unicode property name and returns the string defining the characters
-        it matches. This string is in the format described in perlunicode.
-        The *prop* object takes this string and creates a hash reference in
-        the object's "chars" attribute (as does the *anyof_class* for a
-        POSIX class, and the built-in Perl classes "\w", "\D", etc.). The
-        get_property() method relies on utf8_heavy.pl's utf8::SWASHNEW().
-
-        To determine the characters matched by your locale's "\w", "\d", and
-        "\s", a new parser method cache_locale() has been added. This takes
-        one of 'w', 'd', or 's', and returns a hash reference of non-Unicode
-        characters (values from 0 to 255) that are matched by that Perl
-        class. See the documentation for *anyof* in Regexp::Parser::Objects.
-
-    Diagnostics and Bug Fixes
-        "/^+/" was raising the wrong warning ("RPe_ZQUANT" instead of
-        "RPe_NULNUL").
-
-        Quantifier errors ("RPe_EQUANT" and "RPe_NESTED") are now raised at
-        on the first pass.
-
-        There is now a test of the standard diagnostic messages.
-
-        I left something out of the unicode property grammar. There can be a
-        caret ("^") as the first character inside the braces of a property,
-        negating the sense of that property. However, "\p{^A}" will render
-        as "\P{A}", and vice versa. This may change in future versions, but
-        I see no reason (at the present moment) to distinguish between
-        "\p{^A}" and "\P{A}".
-
-    POSIX Classes
-    You can no longer create your own POSIX character class handlers. I
-    think this is one thing that should *not* be extended. Use Unicode
-    properties.
+  0.10  -- xxx
 
   0.021 -- July 3, 2004
     *anyof_class* Changed
@@ -157,3 +97,4 @@ HISTORY
   0.01 -- June 29, 2004
     First Release
         Documentation not complete, etc.
+
