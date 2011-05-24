@@ -1,11 +1,27 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Regexp-Parser
-version:      0.20
-version_from: lib/Regexp/Parser.pm
-installdirs:  site
+--- #YAML:1.0
+name:               Regexp-Parser
+version:            0.20_01
+abstract:           base class for parsing regexes
+author:
+    - Jeff japhy Pinyan <japhy@perlmonk.org>
+license:            unknown
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+build_requires:
+    ExtUtils::MakeMaker:  0
+    Test::More:           0
 requires:
-    NEXT:                          
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+    Test::More:  0
+resources:
+    homepage:    http://wiki.github.com/toddr/Regexp-Parser
+    license:     http://dev.perl.org/licenses/
+    repository:  http://github.com/toddr/Regexp-Parser/tree/master
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.56
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

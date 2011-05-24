@@ -1,4 +1,8 @@
 HISTORY
+  0.20_01 -- Todd Rinaldo - May 24, 2010
+   - RT 42096 - Fix warning emissions in perl 5.10+ (Variable "$nest" is not available...)
+   - RT 66848 - Fix test failures in perl 5.14 by converting t/02subclass.t to Test::More
+
   0.20  -- xxx
 
   0.10  -- xxx
