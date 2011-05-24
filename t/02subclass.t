@@ -5,8 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test;
-BEGIN { plan tests => 12 };
+use Test::More tests => 12;
 
 {
   package Regexp::AndBranch::__object__;
@@ -76,17 +75,17 @@ my $r1 = Regexp::AndBranch->new;
 my $r2 = Regexp::AndBranch->new;
 
 ok( $r1->regex('^(?:.*foo&\D*(\d+))') );
-ok( $r1->visual, '^(?:.*foo&\D*(\d+))' );
-ok( $r1->qr, ~~qr/^(?:(?=.*foo)\D*(\d+))/ );
+is( $r1->visual, '^(?:.*foo&\D*(\d+))' );
+is( $r1->qr, qr/^(?:(?=.*foo)\D*(\d+))/ );
 
 ok( $r2->regex('^(?:.*foo!\D*(\d+))') );
-ok( $r2->visual, '^(?:.*foo!\D*(\d+))' );
-ok( $r2->qr, ~~qr/^(?:(?!.*foo)\D*(\d+))/ );
+is( $r2->visual, '^(?:.*foo!\D*(\d+))' );
+is( $r2->qr, qr/^(?:(?!.*foo)\D*(\d+))/ );
 
-ok( "1 foo 2" =~ $r1->qr && $1, 1 );
+is( "1 foo 2" =~ $r1->qr && $1, 1 );
 ok( "1 foo 2" !~ $r2->qr );
 
 ok( "1 bar 2" !~ $r1->qr );
-ok( "1 bar 2" =~ $r2->qr && $1, 1 );
+is( "1 bar 2" =~ $r2->qr && $1, 1 );
 
-ok( $r1->object(and => 1)->my_method, "blah" );
+is( $r1->object(and => 1)->my_method, "blah" );
