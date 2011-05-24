@@ -1,5 +1,9 @@
 package Regexp::Parser;
 
+my ($nest_eval, $nest_logical);
+$nest_eval    = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest_eval    }) } )* ]x;
+$nest_logical = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest_logical }) } )* ]x;
+
 sub init {
   my ($self) = @_;
 
@@ -696,9 +700,7 @@ sub init {
   # eval
   $self->add_handler('(?{' => sub {
     my ($S) = @_;
-    my $nest;
-    $nest = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest }) } )* ]x;
-    if (${&Rx} =~ m{ \G ($nest) \} \) }xgc) {
+    if (${&Rx} =~ m{ \G ($nest_eval) \} \) }xgc) {
       push @{ $S->{flags} }, &Rf;
       return $S->object(eval => $1);
     }
@@ -721,9 +723,7 @@ sub init {
   # logical
   $self->add_handler('(??{' => sub {
     my ($S) = @_;
-    my $nest;
-    $nest = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest }) } )* ]x;
-    if (${&Rx} =~ m{ \G ($nest) \} \) }xgc) {
+    if (${&Rx} =~ m{ \G ($nest_logical) \} \) }xgc) {
       push @{ $S->{flags} }, &Rf;
       return $S->object(logical => $1);
     }
