@@ -1,5 +1,8 @@
 HISTORY
-  0.20_01 -- Todd Rinaldo - May 24, 2010
+  0.21    -- Todd Rinaldo May 28, 2011
+   - CPAN Testers looks good. Releasing to stable. No changes other than version.
+
+  0.20_01 -- Todd Rinaldo - May 24, 2011
    - RT 42096 - Fix warning emissions in perl 5.10+ (Variable "$nest" is not available...)
    - RT 66848 - Fix test failures in perl 5.14 by converting t/02subclass.t to Test::More
 

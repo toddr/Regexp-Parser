@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Regexp-Parser
-version:            0.20_01
+version:            0.21
 abstract:           base class for parsing regexes
 author:
     - Jeff japhy Pinyan <japhy@perlmonk.org>
