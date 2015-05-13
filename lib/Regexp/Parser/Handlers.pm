@@ -1,5 +1,7 @@
 package Regexp::Parser;
 
+use strict;
+
 my ($nest_eval, $nest_logical);
 $nest_eval    = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest_eval    }) } )* ]x;
 $nest_logical = qr[ (?> [^\\{}]+ | \\. | { (??{ $nest_logical }) } )* ]x;
