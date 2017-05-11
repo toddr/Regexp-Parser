@@ -307,8 +307,6 @@ sub del_handler {
 
 __END__
 
-=cut
-
 =head1 NAME
 
 Regexp::Parser - base class for parsing regexes
