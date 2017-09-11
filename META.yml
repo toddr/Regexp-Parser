@@ -21,9 +21,9 @@ no_index:
 requires:
   Test::More: '0'
 resources:
-  bugtracker: http://code.google.com/p/Regexp-Parser/issues/list
+  bugtracker: https://github.com/toddr/Regexp-Parser/issues
   homepage: http://wiki.github.com/toddr/Regexp-Parser
   license: http://dev.perl.org/licenses/
   repository: http://github.com/toddr/Regexp-Parser/tree/master
-version: '0.21'
+version: 0.21_01
 x_serialization_backend: 'CPAN::Meta::YAML version 0.018'

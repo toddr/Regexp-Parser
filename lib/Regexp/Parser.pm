@@ -3,7 +3,7 @@ package Regexp::Parser;
 use strict;
 use warnings;
 
-our $VERSION = '0.21_01';
+our $VERSION = '0.21_02';
 
 use 5.006;
 use Carp qw( carp croak );

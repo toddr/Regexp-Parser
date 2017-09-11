@@ -37,10 +37,10 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "unstable",
    "resources" : {
       "bugtracker" : {
-         "web" : "http://code.google.com/p/Regexp-Parser/issues/list"
+         "web" : "https://github.com/toddr/Regexp-Parser/issues"
       },
       "homepage" : "http://wiki.github.com/toddr/Regexp-Parser",
       "license" : [
@@ -50,6 +50,6 @@
          "url" : "http://github.com/toddr/Regexp-Parser/tree/master"
       }
    },
-   "version" : "0.21",
+   "version" : "0.21_01",
    "x_serialization_backend" : "JSON::PP version 2.27400_02"
 }
