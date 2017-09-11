@@ -1,6 +1,9 @@
 package Regexp::Parser;
 
-$VERSION = '0.21';
+use strict;
+use warnings;
+
+our $VERSION = '0.21';
 
 use 5.006;
 use Carp qw( carp croak );
