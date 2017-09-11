@@ -1,4 +1,5 @@
 use NEXT;
+use strict;
 
 {
   package Regexp::Parser::__object__;  
@@ -83,6 +84,7 @@ use NEXT;
 {
   # \A ^ \B \b \G \Z \z $
   package Regexp::Parser::anchor;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
   push @Regexp::Parser::bol::ISA, __PACKAGE__;
   push @Regexp::Parser::bound::ISA, __PACKAGE__;
@@ -109,6 +111,7 @@ use NEXT;
 {
   # . \C
   package Regexp::Parser::reg_any;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -128,6 +131,7 @@ use NEXT;
 {
   # \w \W
   package Regexp::Parser::alnum;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -163,6 +167,7 @@ use NEXT;
 {
   # \s \S
   package Regexp::Parser::space;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -198,6 +203,7 @@ use NEXT;
 {
   # \d \D
   package Regexp::Parser::digit;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -232,6 +238,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -306,6 +313,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof_char;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -325,6 +333,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof_range;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -352,6 +361,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof_class;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -413,6 +423,7 @@ use NEXT;
 
 {
   package Regexp::Parser::anyof_close;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -440,6 +451,7 @@ use NEXT;
 
 {
   package Regexp::Parser::prop;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -475,6 +487,7 @@ use NEXT;
 
 {
   package Regexp::Parser::clump;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -492,6 +505,7 @@ use NEXT;
 
 {
   package Regexp::Parser::branch;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -585,6 +599,7 @@ use NEXT;
 
 {
   package Regexp::Parser::exact;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -635,6 +650,7 @@ use NEXT;
 
 {
   package Regexp::Parser::quant;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -755,6 +771,7 @@ use NEXT;
 {
   # ( non-capturing
   package Regexp::Parser::group;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -830,6 +847,7 @@ use NEXT;
 {
   # ( capturing
   package Regexp::Parser::open;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -905,6 +923,7 @@ use NEXT;
 {
   # ) closing
   package Regexp::Parser::close;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -976,6 +995,7 @@ use NEXT;
 {
   # ) for non-captures
   package Regexp::Parser::tail;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -1035,6 +1055,7 @@ use NEXT;
 {
   # \1 (backrefs)
   package Regexp::Parser::ref;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -1067,6 +1088,7 @@ use NEXT;
 
 {
   package Regexp::Parser::assertion;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   push @Regexp::Parser::ifmatch::ISA, __PACKAGE__;
@@ -1239,6 +1261,7 @@ use NEXT;
 {
   # the N in (?(N)t|f) when N is a number
   package Regexp::Parser::groupp;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -1349,6 +1372,7 @@ use NEXT;
 
 {
   package Regexp::Parser::flags;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {
@@ -1385,6 +1409,7 @@ use NEXT;
 
 {
   package Regexp::Parser::minmod;
+  use vars ('@ISA');
   push @ISA, qw( Regexp::Parser::__object__ );
 
   sub new {

@@ -1,5 +1,6 @@
 package Perl6::Rule::Parser;
 
+use strict;
 use base 'Regexp::Parser';
 
 
